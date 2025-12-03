@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice #00001</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 40px;
+            background: #f5f5f5;
+        }
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .hospital-info {
+            flex: 1;
+        }
+        .hospital-name {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .hospital-details {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .hospital-details p {
+            margin: 4px 0;
+        }
+        .invoice-info {
+            text-align: right;
+        }
+        .invoice-info h2 {
+            color: #667eea;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .invoice-number {
+            color: #666;
+            font-size: 14px;
+        }
+        .invoice-date {
+            color: #666;
+            font-size: 14px;
+        }
+        .charges-table {
+            margin-top: 15px;
+        }
+        .charge-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            background: #fafafa;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+        .charge-description {
+            flex: 1;
+            color: #333;
+            font-weight: 500;
+        }
+        .charge-amount {
+            color: #28a745;
+            font-weight: bold;
+            min-width: 120px;
+            text-align: right;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section-title {
+            color: #333;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        .hospital-info {
+            flex: 1;
+        }
+        .hospital-name {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .hospital-details {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .hospital-details p {
+            margin: 4px 0;
+        }
+        .invoice-info {
+            text-align: right;
+        }
+        .invoice-info h2 {
+            color: #667eea;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .charges-table {
+            margin-top: 15px;
+        }
+        .charge-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            background: #fafafa;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+        .charge-description {
+            flex: 1;
+            color: #333;
+            font-weight: 500;
+        }
+        .charge-amount {
+            color: #28a745;
+            font-weight: bold;
+            min-width: 120px;
+            text-align: right;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #333;
+            font-weight: 600;
+        }
+        .amount-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        .total-amount {
+            font-size: 28px;
+            color: #28a745;
+            font-weight: bold;
+            text-align: right;
+            margin-top: 10px;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+        }
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .invoice-container {
+                box-shadow: none;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <div class="header">
+            <div class="hospital-info">
+                <h1 class="hospital-name">MMGC Hospital</h1>
+                <div class="hospital-details">
+                    <p>123 Medical Center Road, Healthcare District</p>
+                    <p>Karachi, Pakistan</p>
+                    <p>Phone: +92-300-1234567 | Email: info@mmgc.com</p>
+                </div>
+            </div>
+            <div class="invoice-info">
+                <h2>INVOICE</h2>
+                <div class="invoice-number">Invoice #: INV-00001</div>
+                <div class="invoice-date">Date: 03 Dec 2025 14:21</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Patient Information</div>
+            <div class="info-row">
+                <span class="info-label">Patient Name:</span>
+                <span class="info-value">Kainat  Iftikhar</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">MR Number:</span>
+                <span class="info-value">MR202500001</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Charges Breakdown</div>
+            <div class="charges-table">
+                
+                <div class="charge-row">
+                    <div class="charge-description">Procedure: Cardiography </div>
+                    <div class="charge-amount">PKR 15,000.00</div>
+                </div>
+                <div class="charge-row">
+                    <div class="charge-description">Lab Test: Erythrocyte Sedimentation Rate (ESR</div>
+                    <div class="charge-amount">PKR 5,000.00</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Payment Information</div>
+            <div class="info-row">
+                <span class="info-label">Transaction Type:</span>
+                <span class="info-value">Other</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Payment Mode:</span>
+                <span class="info-value">Card</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Status:</span>
+                <span class="info-value">Completed</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Transaction Date:</span>
+                <span class="info-value">03 Dec 2025 14:20</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Reference Number:</span>
+                <span class="info-value">78645646767ALHLKAH565785</span>
+            </div>
+        </div>
+
+        <div class="amount-section">
+            <div class="info-row">
+                <span class="info-label">Total Amount:</span>
+            </div>
+            <div class="total-amount">PKR 21,000.00</div>
+        </div>
+
+        <div class="footer">
+            <p>This is a computer-generated invoice. No signature required.</p>
+            <p>Generated on: 03 Dec 2025 14:21</p>
+        </div>
+    </div>
+</body>
+</html>

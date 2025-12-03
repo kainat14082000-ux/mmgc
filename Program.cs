@@ -87,17 +87,23 @@ using (var scope = app.Services.CreateScope())
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         
-        // Ensure database is created and migrations are applied
-        logger.LogInformation("Ensuring database is created...");
-        await context.Database.EnsureCreatedAsync();
-        
-        // Apply pending migrations
+        // Apply pending migrations (this will create the database if it doesn't exist)
         logger.LogInformation("Applying pending migrations...");
-        await context.Database.MigrateAsync();
-        
-        // Wait a moment for migrations to complete
+        try
+        {
+            await context.Database.MigrateAsync();
+        }
+        catch (Microsoft.Data.SqlClient.SqlException sqlEx) when (sqlEx.Number == 2714)
+        {
+            // Error 2714 = 'There is already an object named ... in the database.'
+            // This can happen if the database schema exists but the __EFMigrationsHistory
+            // table doesn't contain the migration entries. Log and continue to seeding
+            // (we assume schema is compatible in development scenarios).
+            logger.LogWarning(sqlEx, "Migration attempted to create objects that already exist. Skipping migrations and proceeding to seeding.");
+        }
+        // Wait a moment for migrations to (attempt to) complete
         await Task.Delay(1000);
-        
+
         // Seed roles and admin user
         logger.LogInformation("Starting database seeding...");
         await DbInitializer.SeedRolesAndAdminUser(scope.ServiceProvider);
@@ -107,6 +113,15 @@ using (var scope = app.Services.CreateScope())
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while seeding the database.");
+        // Also write the full exception to stderr so Docker logs capture the stack trace
+        try
+        {
+            Console.Error.WriteLine(ex.ToString());
+        }
+        catch
+        {
+            // Ignore any issues writing to console
+        }
         // Don't exit - allow app to start even if seeding fails
     }
 }
