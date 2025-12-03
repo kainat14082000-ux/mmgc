@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice #00003</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 40px;
+            background: #f5f5f5;
+        }
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .invoice-number {
+            color: #666;
+            font-size: 14px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section-title {
+            color: #333;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #333;
+            font-weight: 600;
+        }
+        .amount-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        .total-amount {
+            font-size: 28px;
+            color: #28a745;
+            font-weight: bold;
+            text-align: right;
+            margin-top: 10px;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+        }
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .invoice-container {
+                box-shadow: none;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <div class="header">
+            <h1>INVOICE</h1>
+            <div class="invoice-number">Invoice Number: INV-00003</div>
+            <div class="invoice-number">Date: 02 Dec 2025 12:15</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Patient Information</div>
+            <div class="info-row">
+                <span class="info-label">Patient Name:</span>
+                <span class="info-value">Ignacia Chavez</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">MR Number:</span>
+                <span class="info-value">MR202500001</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Transaction Details</div>
+            <div class="info-row">
+                <span class="info-label">Description:</span>
+                <span class="info-value">Necessitatibus repellendus Eligendi enim consequuntur lorem a possimus quia doloribus pariatur Qu</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Transaction Type:</span>
+                <span class="info-value">Procedure</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Payment Mode:</span>
+                <span class="info-value">Bank</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Status:</span>
+                <span class="info-value">Completed</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Transaction Date:</span>
+                <span class="info-value">20 Dec 1976 07:34</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Reference Number:</span>
+                <span class="info-value">879667476587978AFREG</span>
+            </div>
+        </div>
+
+        <div class="amount-section">
+            <div class="info-row">
+                <span class="info-label">Total Amount:</span>
+            </div>
+            <div class="total-amount">₹250.00</div>
+        </div>
+
+        <div class="footer">
+            <p>This is a computer-generated invoice. No signature required.</p>
+            <p>Generated on: 02 Dec 2025 12:15</p>
+        </div>
+    </div>
+</body>
+</html>

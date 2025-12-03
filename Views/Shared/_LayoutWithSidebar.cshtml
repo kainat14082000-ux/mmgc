@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MMGC Hospital Management</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/MMGC.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-hospital"></i>
+                <h4>MMGC Hospital</h4>
+            </div>
+            
+            <ul class="sidebar-nav">
+                <li class="sidebar-item">
+                    <a class="sidebar-link" asp-controller="Admin" asp-action="Dashboard">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="#appointmentsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="bi bi-calendar-check"></i>
+                        <span>Appointments</span>
+                        <i class="bi bi-chevron-down ms-auto"></i>
+                    </a>
+                    <ul class="collapse sidebar-submenu" id="appointmentsSubmenu">
+                        <li><a asp-controller="Appointments" asp-action="Index">All Appointments</a></li>
+                        <li><a asp-controller="Appointments" asp-action="Create">New Appointment</a></li>
+                    </ul>
+                </li>
+                
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="#patientsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="bi bi-people"></i>
+                        <span>Patients</span>
+                        <i class="bi bi-chevron-down ms-auto"></i>
+                    </a>
+                    <ul class="collapse sidebar-submenu" id="patientsSubmenu">
+                        <li><a asp-controller="Patients" asp-action="Index">All Patients</a></li>
+                        <li><a asp-controller="Patients" asp-action="Create">Register Patient</a></li>
+                    </ul>
+                </li>
+                
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="#doctorsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="bi bi-person-badge"></i>
+                        <span>Doctors</span>
+                        <i class="bi bi-chevron-down ms-auto"></i>
+                    </a>
+                    <ul class="collapse sidebar-submenu" id="doctorsSubmenu">
+                        <li><a asp-controller="Doctors" asp-action="Index">All Doctors</a></li>
+                        <li><a asp-controller="Doctors" asp-action="Create">Add Doctor</a></li>
+                    </ul>
+                </li>
+                
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="#proceduresSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="bi bi-clipboard-pulse"></i>
+                        <span>Procedures</span>
+                        <i class="bi bi-chevron-down ms-auto"></i>
+                    </a>
+                    <ul class="collapse sidebar-submenu" id="proceduresSubmenu">
+                        <li><a asp-controller="Procedures" asp-action="Index">All Procedures</a></li>
+                        <li><a asp-controller="Procedures" asp-action="Create">New Procedure</a></li>
+                    </ul>
+                </li>
+                
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="#labSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="bi bi-file-medical"></i>
+                        <span>Laboratory</span>
+                        <i class="bi bi-chevron-down ms-auto"></i>
+                    </a>
+                    <ul class="collapse sidebar-submenu" id="labSubmenu">
+                        <li><a asp-controller="LabTests" asp-action="Index">All Lab Tests</a></li>
+                        <li><a asp-controller="LabTests" asp-action="Create">New Lab Test</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a asp-controller="LabTestCategories" asp-action="Index">Test Categories</a></li>
+                    </ul>
+                </li>
+                
+                <li class="sidebar-item">
+                    <a class="sidebar-link" asp-controller="Transactions" asp-action="Index">
+                        <i class="bi bi-cash-coin"></i>
+                        <span>Transactions</span>
+                    </a>
+                </li>
+                
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="#usersSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="bi bi-people-fill"></i>
+                        <span>Users & Admin</span>
+                        <i class="bi bi-chevron-down ms-auto"></i>
+                    </a>
+                    <ul class="collapse sidebar-submenu" id="usersSubmenu">
+                        <li><a asp-controller="Users" asp-action="Index">All Users</a></li>
+                        <li><a asp-controller="Users" asp-action="Create">Create User</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <div id="content">
+            <!-- Top Navigation Bar -->
+            <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+                <div class="container-fluid">
+                    <button type="button" id="sidebarCollapse" class="btn btn-light">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    
+                    <div class="ms-auto d-flex align-items-center">
+                        <div class="dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle fs-4 me-2"></i>
+                                <span>@User.Identity?.Name</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" asp-controller="Account" asp-action="Manage">
+                                    <i class="bi bi-person"></i> Profile
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form class="d-inline" asp-controller="Account" asp-action="Logout" method="post">
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="bi bi-box-arrow-right"></i> Logout
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Page Content -->
+            <div class="content-area">
+                <main role="main">
+                    @RenderBody()
+                </main>
+            </div>
+
+            <!-- Footer -->
+            <footer class="footer mt-auto py-3 bg-light">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <span class="text-muted">&copy; @DateTime.Now.Year - MMGC Hospital Management System</span>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <a asp-area="" asp-controller="Home" asp-action="Privacy" class="text-muted text-decoration-none">Privacy</a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+

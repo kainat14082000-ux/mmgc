@@ -1,0 +1,131 @@
+@model MMGC.Models.LabTest
+@{
+    ViewData["Title"] = "Upload Lab Test Report";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-upload"></i> Upload Lab Test Report</h2>
+            <p>Upload test report for: <strong>@Model.TestName</strong></p>
+        </div>
+        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Details
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-10 col-xl-8">
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="UploadReport" method="post" enctype="multipart/form-data" id="uploadForm">
+                    <input type="hidden" asp-for="Id" />
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="All" class="alert alert-danger" role="alert" id="validationSummary" style="display:@(ViewData.ModelState.IsValid ? "none" : "block")">
+                        <strong><i class="bi bi-exclamation-triangle"></i> Please correct the errors below</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Distinct())
+                            {
+                                <li>@error</li>
+                            }
+                        </ul>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5><i class="bi bi-info-circle"></i> Test Information</h5>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>Patient:</strong> @Model.Patient?.FullName<br>
+                                        <strong>Test Name:</strong> @Model.TestName<br>
+                                        <strong>Category:</strong> @Model.LabTestCategory?.CategoryName
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Test Date:</strong> @Model.TestDate.ToString("dd MMM yyyy")<br>
+                                        <strong>Status:</strong> <span class="badge bg-warning">@Model.Status</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reportFile" class="form-label">
+                            <i class="bi bi-file-earmark-arrow-up"></i> Report File
+                        </label>
+                        <input type="file" name="reportFile" id="reportFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required />
+                        <small class="form-text text-muted">Accepted formats: PDF, JPG, PNG, DOC, DOCX (Max 10MB)</small>
+                        <span class="text-danger field-validation-valid" data-valmsg-for="reportFile" data-valmsg-replace="true"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">
+                            <i class="bi bi-file-text"></i> Report Notes
+                        </label>
+                        <textarea name="notes" id="notes" class="form-control" rows="6" placeholder="Enter test results, findings, or any additional notes..."></textarea>
+                        <small class="form-text text-muted">Optional: Add test results or findings here.</small>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> <strong>Note:</strong> Uploading a report will automatically change the test status to "Completed".
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success" id="submitBtn">
+                            <i class="bi bi-upload"></i> Upload Report
+                        </button>
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var form = document.getElementById('uploadForm');
+            var fileInput = document.getElementById('reportFile');
+            
+            if (!form || !fileInput) return;
+
+            // File size validation (10MB)
+            fileInput.addEventListener('change', function() {
+                var file = this.files[0];
+                if (file) {
+                    var maxSize = 10 * 1024 * 1024; // 10MB
+                    if (file.size > maxSize) {
+                        alert('File size exceeds 10MB. Please select a smaller file.');
+                        this.value = '';
+                        return;
+                    }
+                }
+            });
+
+            form.addEventListener('submit', function (e) {
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    e.preventDefault();
+                    alert('Please select a file to upload.');
+                    fileInput.focus();
+                    return false;
+                }
+
+                var btn = document.getElementById('submitBtn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Uploading...';
+                }
+            });
+        })();
+    </script>
+}
+

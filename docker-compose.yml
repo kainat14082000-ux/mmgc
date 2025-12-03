@@ -1,0 +1,104 @@
+services:
+  # MSSQL Server
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mmgc-mssql
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
+      - MSSQL_PID=Developer
+    ports:
+      - "${MSSQL_PORT:-5001}:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+    networks:
+      - mmgc-network
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" -b' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+
+  # Database initialization - ensures database exists before other services connect
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mmgc-db-init
+    environment:
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
+      - MSSQL_DATABASE=${MSSQL_DATABASE:-MMGC}
+      - MSSQL_HOST=mssql
+    volumes:
+      - ./create-db.sh:/create-db.sh:ro
+    networks:
+      - mmgc-network
+    depends_on:
+      mssql:
+        condition: service_healthy
+    command: bash /create-db.sh
+    restart: "no"
+
+  # SQLPad for database UI
+  sqlpad:
+    image: sqlpad/sqlpad:latest
+    container_name: mmgc-sqlpad
+    environment:
+      - SQLPAD_PORT=3000
+      - SQLPAD_ADMIN=${SQLPAD_ADMIN:-admin@example.com}
+      - SQLPAD_ADMIN_PASSWORD=${SQLPAD_ADMIN_PASSWORD}
+      - SQLPAD_CONNECTIONS__mmgc__name=MMGC Database
+      - SQLPAD_CONNECTIONS__mmgc__driver=sqlserver
+      - SQLPAD_CONNECTIONS__mmgc__host=mssql
+      - SQLPAD_CONNECTIONS__mmgc__port=1433
+      - SQLPAD_CONNECTIONS__mmgc__database=${MSSQL_DATABASE}
+      - SQLPAD_CONNECTIONS__mmgc__username=sa
+      - SQLPAD_CONNECTIONS__mmgc__password=${MSSQL_SA_PASSWORD}
+    ports:
+      - "${SQLPAD_PORT:-5002}:3000"
+    depends_on:
+      mssql:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    networks:
+      - mmgc-network
+    volumes:
+      - sqlpad_data:/var/lib/sqlpad
+
+  # ASP.NET Core Web Application
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mmgc-webapp
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:${WEBAPP_PORT:-5003}
+      - ConnectionStrings__DefaultConnection=Server=mssql,1433;Database=${MSSQL_DATABASE};User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
+      - DOTNET_USE_POLLING_FILE_WATCHER=false
+      - DOTNET_WATCH_RESTART_ON_RUDE_EDIT=true
+      - DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER=true
+    ports:
+      - "${WEBAPP_PORT:-5003}:${WEBAPP_PORT:-5003}"
+    volumes:
+      - .:/src
+      - /src/bin
+      - /src/obj
+    working_dir: /src
+    depends_on:
+      mssql:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    networks:
+      - mmgc-network
+    command: dotnet watch run --urls http://0.0.0.0:${WEBAPP_PORT:-5003} --project MMGC.csproj
+
+volumes:
+  mssql_data:
+  sqlpad_data:
+
+networks:
+  mmgc-network:
+    driver: bridge
+

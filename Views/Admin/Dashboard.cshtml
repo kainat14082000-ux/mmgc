@@ -1,0 +1,230 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+    var monthlyRevenue = ViewBag.MonthlyRevenue as Dictionary<string, decimal>;
+    var todayAppointments = ViewBag.TodayAppointments as IEnumerable<dynamic>;
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+    <p>Hospital Management Overview</p>
+</div>
+
+<!-- Overview Cards -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">Total Appointments</p>
+                    <h2 class="mb-0 fw-bold">@ViewBag.TotalAppointments</h2>
+                    <small class="text-success"><i class="bi bi-arrow-up"></i> Active</small>
+                </div>
+                <div class="dashboard-icon icon-primary">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">Total Patients</p>
+                    <h2 class="mb-0 fw-bold">@ViewBag.TotalPatients</h2>
+                    <small class="text-success"><i class="bi bi-arrow-up"></i> Registered</small>
+                </div>
+                <div class="dashboard-icon icon-success">
+                    <i class="bi bi-people"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">Total Procedures</p>
+                    <h2 class="mb-0 fw-bold">@ViewBag.TotalProcedures</h2>
+                    <small class="text-info"><i class="bi bi-activity"></i> Completed</small>
+                </div>
+                <div class="dashboard-icon icon-info">
+                    <i class="bi bi-clipboard-pulse"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="text-muted mb-2 fw-semibold">Lab Reports</p>
+                    <h2 class="mb-0 fw-bold">@ViewBag.TotalLabReports</h2>
+                    <small class="text-warning"><i class="bi bi-hourglass-split"></i> Pending</small>
+                </div>
+                <div class="dashboard-icon icon-warning">
+                    <i class="bi bi-file-medical"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue Card -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="mb-0"><i class="bi bi-cash-coin"></i> Total Revenue</h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center mb-4">
+                    <div class="col-md-6">
+                        <h2 class="text-gradient fw-bold mb-0">PKR @ViewBag.TotalRevenue.ToString("N2")</h2>
+                        <p class="text-muted mb-0">Total Revenue for @DateTime.Now.Year</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <a asp-controller="Transactions" asp-action="Index" class="btn btn-primary">
+                            <i class="bi bi-eye"></i> View All Transactions
+                        </a>
+                    </div>
+                </div>
+                
+                <h6 class="text-muted mb-3 fw-semibold">Monthly Revenue Statistics</h6>
+                <div class="row">
+                    @if (monthlyRevenue != null && monthlyRevenue.Any())
+                    {
+                        var maxRevenue = monthlyRevenue.Values.Max();
+                        @foreach (var month in monthlyRevenue)
+                        {
+                            var percentage = maxRevenue > 0 ? (month.Value / maxRevenue) * 100 : 0;
+                            var height = Math.Max(20, percentage);
+                            
+                            <div class="col-md-2 col-sm-4 col-6 mb-3">
+                                <div class="text-center">
+                                    <div class="mb-2" style="height: 120px; display: flex; align-items: flex-end;">
+                                        <div style="width: 100%; height: @(height)%; background: linear-gradient(to top, #667eea, #764ba2); border-radius: 8px 8px 0 0; transition: all 0.3s ease;"
+                                             data-bs-toggle="tooltip" 
+                                             title="PKR @month.Value.ToString("N2")">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted d-block fw-semibold">@month.Key</small>
+                                    <strong class="text-gradient">PKR @month.Value.ToString("N0")</strong>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="col-12">
+                            <p class="text-muted text-center py-3">No revenue data available</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Today's Appointments -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Today's Appointments</h5>
+                    <span class="badge bg-white text-dark">@(todayAppointments?.Count() ?? 0) Appointments</span>
+                </div>
+            </div>
+            <div class="card-body">
+                @if (todayAppointments != null && todayAppointments.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th><i class="bi bi-person"></i> Patient Name</th>
+                                    <th><i class="bi bi-person-badge"></i> Doctor</th>
+                                    <th><i class="bi bi-clock"></i> Time</th>
+                                    <th><i class="bi bi-tag"></i> Type</th>
+                                    <th><i class="bi bi-info-circle"></i> Status</th>
+                                    <th><i class="bi bi-gear"></i> Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var appointment in todayAppointments)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-circle bg-primary text-white me-2" style="width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                    @appointment.PatientName.Substring(0, 1).ToUpper()
+                                                </div>
+                                                <strong>@appointment.PatientName</strong>
+                                            </div>
+                                        </td>
+                                        <td>@appointment.DoctorName</td>
+                                        <td>
+                                            <i class="bi bi-clock-fill text-primary"></i> 
+                                            @appointment.AppointmentDate.ToString("hh:mm tt")
+                                        </td>
+                                        <td><span class="badge bg-secondary">@appointment.AppointmentType</span></td>
+                                        <td>
+                                            @{
+                                                var statusClass = appointment.Status switch
+                                                {
+                                                    "Scheduled" => "bg-primary",
+                                                    "Confirmed" => "bg-success",
+                                                    "Completed" => "bg-info",
+                                                    "Cancelled" => "bg-danger",
+                                                    _ => "bg-secondary"
+                                                };
+                                            }
+                                            <span class="badge @statusClass">
+                                                <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> @appointment.Status
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a asp-controller="Appointments" asp-action="Details" asp-route-id="@appointment.Id" 
+                                               class="btn btn-sm btn-primary" data-bs-toggle="tooltip" title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-controller="Appointments" asp-action="Edit" asp-route-id="@appointment.Id" 
+                                               class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-calendar-x" style="font-size: 4rem; color: #e0e0e0;"></i>
+                        <p class="text-muted mt-3 mb-0">No appointments scheduled for today.</p>
+                        <a asp-controller="Appointments" asp-action="Create" class="btn btn-primary mt-3">
+                            <i class="bi bi-plus-circle"></i> Schedule New Appointment
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    </script>
+}

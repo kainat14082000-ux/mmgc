@@ -1,0 +1,222 @@
+@model MMGC.Models.Appointment
+@{
+    ViewData["Title"] = "Appointment Details";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-calendar-check"></i> Appointment Details</h2>
+            <p>View complete appointment information</p>
+        </div>
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Appointment Information -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="mb-0"><i class="bi bi-calendar-check"></i> Appointment Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-calendar-event"></i> Appointment Date & Time</strong>
+                        <p class="mb-0"><strong>@Model.AppointmentDate.ToString("dd MMM yyyy hh:mm tt")</strong></p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-tag"></i> Appointment Type</strong>
+                        <p class="mb-0"><span class="badge bg-secondary">@Model.AppointmentType</span></p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-info-circle"></i> Status</strong>
+                        <p class="mb-0">
+                            @{
+                                var statusClass = Model.Status switch
+                                {
+                                    "Scheduled" => "bg-primary",
+                                    "Confirmed" => "bg-success",
+                                    "Completed" => "bg-info",
+                                    "Cancelled" => "bg-danger",
+                                    "No-Show" => "bg-warning",
+                                    _ => "bg-secondary"
+                                };
+                            }
+                            <span class="badge @statusClass">
+                                <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> @Model.Status
+                            </span>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-cash-coin"></i> Consultation Fee</strong>
+                        <p class="mb-0"><strong class="text-success">PKR @Model.ConsultationFee.ToString("N2")</strong></p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-person"></i> Created By</strong>
+                        <p class="mb-0">@(Model.CreatedBy ?? "System")</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-calendar"></i> Created Date</strong>
+                        <p class="mb-0">@Model.CreatedDate.ToString("dd MMM yyyy hh:mm tt")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient & Doctor Information -->
+        <div class="card mb-4">
+            <div class="card-header" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white;">
+                <h5 class="mb-0"><i class="bi bi-people"></i> Patient & Medical Team</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-person"></i> Patient</strong>
+                        <p class="mb-0">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle bg-primary text-white me-2" style="width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    @(Model.Patient?.FullName?.Substring(0, 1).ToUpper() ?? "P")
+                                </div>
+                                <div>
+                                    <strong>@Model.Patient?.FullName</strong><br>
+                                    <small class="text-muted">MR: @Model.Patient?.MRNumber</small>
+                                </div>
+                            </div>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-person-badge"></i> Doctor</strong>
+                        <p class="mb-0">
+                            @if (Model.Doctor != null)
+                            {
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-info text-white me-2" style="width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                        @Model.Doctor.FullName.Substring(0, 1).ToUpper()
+                                    </div>
+                                    <div>
+                                        <strong>@Model.Doctor.FullName</strong><br>
+                                        <small class="text-muted">@Model.Doctor.Specialization</small>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Not Assigned</span>
+                            }
+                        </p>
+                    </div>
+                </div>
+                @if (Model.Nurse != null)
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-person-heart"></i> Nurse</strong>
+                            <p class="mb-0">@Model.Nurse.FullName</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Reason -->
+        @if (!string.IsNullOrEmpty(Model.Reason))
+        {
+            <div class="card mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white;">
+                    <h5 class="mb-0"><i class="bi bi-file-text"></i> Reason for Appointment</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0" style="white-space: pre-wrap;">@Model.Reason</p>
+                </div>
+            </div>
+        }
+
+        <!-- Notes -->
+        @if (!string.IsNullOrEmpty(Model.Notes))
+        {
+            <div class="card mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); color: white;">
+                    <h5 class="mb-0"><i class="bi bi-sticky"></i> Notes</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0" style="white-space: pre-wrap;">@Model.Notes</p>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Sidebar Information -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Additional Information</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.UpdatedDate.HasValue)
+                {
+                    <div class="mb-3">
+                        <strong><i class="bi bi-pencil"></i> Updated Date</strong>
+                        <p class="mb-0">@Model.UpdatedDate.Value.ToString("dd MMM yyyy hh:mm tt")</p>
+                    </div>
+                }
+                <div class="mb-3">
+                    <strong><i class="bi bi-chat-text"></i> SMS Notification</strong>
+                    <p class="mb-0">
+                        @if (Model.SMSSent)
+                        {
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Sent</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Not Sent</span>
+                        }
+                    </p>
+                </div>
+                <div class="mb-3">
+                    <strong><i class="bi bi-whatsapp"></i> WhatsApp Notification</strong>
+                    <p class="mb-0">
+                        @if (Model.WhatsAppSent)
+                        {
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Sent</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Not Sent</span>
+                        }
+                    </p>
+                </div>
+                <hr>
+                <div class="d-grid gap-2">
+                    @if (Model.PatientId.HasValue)
+                    {
+                        <a asp-controller="Patients" asp-action="Details" asp-route-id="@Model.PatientId.Value" class="btn btn-outline-primary">
+                            <i class="bi bi-person"></i> View Patient Profile
+                        </a>
+                    }
+                    @if (Model.DoctorId.HasValue)
+                    {
+                        <a asp-controller="Doctors" asp-action="Details" asp-route-id="@Model.DoctorId.Value" class="btn btn-outline-info">
+                            <i class="bi bi-person-badge"></i> View Doctor Profile
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

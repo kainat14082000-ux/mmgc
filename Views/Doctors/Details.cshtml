@@ -1,0 +1,214 @@
+@model MMGC.Models.Doctor
+@{
+    ViewData["Title"] = "Doctor Details";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+    var totalRevenue = ViewBag.TotalRevenue as decimal? ?? 0;
+    var totalAppointments = ViewBag.TotalAppointments as int? ?? 0;
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-person-badge"></i> Doctor Profile</h2>
+            <p>View doctor details and statistics</p>
+        </div>
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Doctor Information -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white;">
+                <h5 class="mb-0"><i class="bi bi-person"></i> Personal Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-person"></i> Full Name</strong>
+                        <p class="mb-0">@Model.FullName</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-award"></i> Specialization</strong>
+                        <p class="mb-0"><span class="badge bg-secondary">@Model.Specialization</span></p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-telephone"></i> Contact Number</strong>
+                        <p class="mb-0">@(Model.ContactNumber ?? "Not provided")</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-envelope"></i> Email</strong>
+                        <p class="mb-0">@(Model.Email ?? "Not provided")</p>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.LicenseNumber))
+                {
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-shield-check"></i> License Number</strong>
+                            <p class="mb-0">@Model.LicenseNumber</p>
+                        </div>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Address))
+                {
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <strong><i class="bi bi-geo-alt"></i> Address</strong>
+                            <p class="mb-0">@Model.Address</p>
+                        </div>
+                    </div>
+                }
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-cash-coin"></i> Consultation Fee</strong>
+                        <p class="mb-0"><strong class="text-success">PKR @Model.ConsultationFee.ToString("N2")</strong></p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-toggle-on"></i> Status</strong>
+                        <p class="mb-0">
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-x-circle"></i> Inactive
+                                </span>
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointments -->
+        @if (Model.Appointments != null && Model.Appointments.Any())
+        {
+            <div class="card mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white;">
+                    <h5 class="mb-0"><i class="bi bi-calendar-check"></i> Recent Appointments</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Date & Time</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var appointment in Model.Appointments.OrderByDescending(a => a.AppointmentDate).Take(10))
+                                {
+                                    <tr>
+                                        <td>@appointment.Patient?.FullName</td>
+                                        <td>@appointment.AppointmentDate.ToString("dd MMM yyyy hh:mm tt")</td>
+                                        <td><span class="badge bg-secondary">@appointment.AppointmentType</span></td>
+                                        <td>
+                                            @{
+                                                var statusClass = appointment.Status switch
+                                                {
+                                                    "Scheduled" => "bg-primary",
+                                                    "Confirmed" => "bg-success",
+                                                    "Completed" => "bg-info",
+                                                    "Cancelled" => "bg-danger",
+                                                    _ => "bg-secondary"
+                                                };
+                                            }
+                                            <span class="badge @statusClass">@appointment.Status</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Statistics Sidebar -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="dashboard-icon icon-info mx-auto mb-3">
+                        <i class="bi bi-person-badge" style="font-size: 2rem;"></i>
+                    </div>
+                    <h4>@Model.FullName</h4>
+                    <p class="text-muted mb-0">@Model.Specialization</p>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span><i class="bi bi-calendar-check text-primary"></i> Total Appointments</span>
+                        <strong class="text-primary">@totalAppointments</strong>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span><i class="bi bi-cash-coin text-success"></i> Total Revenue</span>
+                        <strong class="text-success">PKR @totalRevenue.ToString("N2")</strong>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span><i class="bi bi-cash text-info"></i> Consultation Fee</span>
+                        <strong class="text-info">PKR @Model.ConsultationFee.ToString("N2")</strong>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="mb-2">
+                    <small class="text-muted">
+                        <i class="bi bi-calendar"></i> Created: @Model.CreatedDate.ToString("dd MMM yyyy")
+                    </small>
+                </div>
+                @if (Model.UpdatedDate.HasValue)
+                {
+                    <div>
+                        <small class="text-muted">
+                            <i class="bi bi-pencil"></i> Updated: @Model.UpdatedDate.Value.ToString("dd MMM yyyy")
+                        </small>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @if (Model.Procedures != null && Model.Procedures.Any())
+        {
+            <div class="card">
+                <div class="card-header" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); color: white;">
+                    <h5 class="mb-0"><i class="bi bi-clipboard-pulse"></i> Procedures</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0"><strong>@Model.Procedures.Count()</strong> procedures performed</p>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+

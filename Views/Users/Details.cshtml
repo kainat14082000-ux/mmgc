@@ -1,0 +1,170 @@
+@model MMGC.Controllers.UserViewModel
+@{
+    ViewData["Title"] = "User Details";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-person-circle"></i> User Details</h2>
+            <p>View user information and account status</p>
+        </div>
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-person"></i> User Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="avatar-circle bg-primary text-white mx-auto" style="width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold;">
+                        @(Model.FirstName?.Substring(0, 1).ToUpper() ?? "U")
+                    </div>
+                    <h4 class="mt-3">@(Model.FirstName ?? "") @(Model.LastName ?? "")</h4>
+                    <p class="text-muted">@Model.UserName</p>
+                </div>
+                <hr>
+                <p><strong><i class="bi bi-envelope"></i> Email:</strong><br>@Model.Email</p>
+                @if (!string.IsNullOrEmpty(Model.PhoneNumber))
+                {
+                    <p><strong><i class="bi bi-telephone"></i> Phone:</strong><br>@Model.PhoneNumber</p>
+                }
+                <p><strong><i class="bi bi-shield-check"></i> Role(s):</strong><br>
+                    @if (Model.Roles.Any())
+                    {
+                        @foreach (var role in Model.Roles)
+                        {
+                            <span class="badge bg-info me-1">@role</span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">No Role</span>
+                    }
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <!-- Account Status -->
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Account Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong>Email Confirmed:</strong><br>
+                        @if (Model.EmailConfirmed)
+                        {
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Confirmed</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning"><i class="bi bi-x-circle"></i> Pending</span>
+                        }
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>Account Status:</strong><br>
+                        @if (Model.LockoutEnabled && Model.LockoutEnd.HasValue && Model.LockoutEnd.Value > DateTimeOffset.UtcNow)
+                        {
+                            <span class="badge bg-danger"><i class="bi bi-lock"></i> Locked</span>
+                            <br><small class="text-muted">Until: @Model.LockoutEnd.Value.ToString("dd MMM yyyy HH:mm")</small>
+                        }
+                        else if (Model.AccessFailedCount > 0)
+                        {
+                            <span class="badge bg-warning"><i class="bi bi-exclamation-triangle"></i> Failed Attempts: @Model.AccessFailedCount</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success"><i class="bi bi-unlock"></i> Active</span>
+                        }
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>Lockout Enabled:</strong><br>
+                        @if (Model.LockoutEnabled)
+                        {
+                            <span class="badge bg-primary">Yes</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">No</span>
+                        }
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>User ID:</strong><br>
+                        <small class="text-muted">@Model.Id</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i> Edit User
+                    </a>
+                    <button type="button" class="btn btn-danger delete-user" data-user-id="@Model.Id" data-user-name="@(Model.FirstName + " " + Model.LastName)">
+                        <i class="bi bi-trash"></i> Delete User
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Form (Hidden) -->
+<form id="deleteForm" asp-action="Delete" method="post" style="display: none;">
+    <input type="hidden" name="id" id="deleteUserId" />
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Delete confirmation
+            document.querySelectorAll('.delete-user').forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    const userName = this.getAttribute('data-user-name');
+                    
+                    Swal.fire({
+                        title: 'Delete User?',
+                        html: `Are you sure you want to delete <strong>${userName}</strong>?<br><br>This action cannot be undone.`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Yes, delete it!',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            document.getElementById('deleteUserId').value = userId;
+                            document.getElementById('deleteForm').submit();
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+}
+

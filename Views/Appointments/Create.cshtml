@@ -1,0 +1,188 @@
+@model MMGC.Models.Appointment
+@{
+    ViewData["Title"] = "Create Appointment";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-calendar-plus"></i> Create New Appointment</h2>
+            <p>Schedule a new appointment for a patient</p>
+        </div>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-10 col-xl-8">
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="Create" method="post" id="appointmentForm" novalidate>
+                    @Html.AntiForgeryToken()
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert" id="validationSummary">
+                            <strong><i class="bi bi-exclamation-triangle"></i> Please correct the errors below</strong>
+                            <ul class="mb-0 mt-2">
+                                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Distinct())
+                                {
+                                    <li>@error</li>
+                                }
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    <h5 class="mb-3"><i class="bi bi-person"></i> Patient & Doctor Information</h5>
+            
+                    <div class="mb-3">
+                        <label asp-for="PatientId" class="form-label"></label>
+                        <select asp-for="PatientId" asp-items="ViewBag.Patients" class="form-select" id="PatientId" required>
+                            <option value="">-- Select Patient --</option>
+                        </select>
+                        <span asp-validation-for="PatientId" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="DoctorId" class="form-label"></label>
+                            <select asp-for="DoctorId" asp-items="ViewBag.Doctors" class="form-select" id="DoctorId">
+                                <option value="">-- Select Doctor (Optional) --</option>
+                            </select>
+                            <span asp-validation-for="DoctorId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="NurseId" class="form-label"></label>
+                            <select asp-for="NurseId" asp-items="ViewBag.Nurses" class="form-select" id="NurseId">
+                                <option value="">-- Select Nurse (Optional) --</option>
+                            </select>
+                            <span asp-validation-for="NurseId" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 mt-4"><i class="bi bi-calendar-event"></i> Appointment Details</h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="AppointmentDate" class="form-label"></label>
+                            <input asp-for="AppointmentDate" class="form-control" type="datetime-local" />
+                            <span asp-validation-for="AppointmentDate" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="AppointmentType" class="form-label"></label>
+                            <select asp-for="AppointmentType" class="form-select">
+                                <option value="General">General</option>
+                                <option value="Follow-up">Follow-up</option>
+                                <option value="Emergency">Emergency</option>
+                                <option value="Consultation">Consultation</option>
+                            </select>
+                            <span asp-validation-for="AppointmentType" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ConsultationFee" class="form-label"></label>
+                        <div class="input-group">
+                            <span class="input-group-text">PKR</span>
+                            <input asp-for="ConsultationFee" class="form-control" type="number" step="0.01" min="0" placeholder="0.00" />
+                        </div>
+                        <span asp-validation-for="ConsultationFee" class="text-danger"></span>
+                    </div>
+
+                    <h5 class="mb-3 mt-4"><i class="bi bi-file-text"></i> Additional Information</h5>
+
+                    <div class="mb-3">
+                        <label asp-for="Reason" class="form-label"></label>
+                        <textarea asp-for="Reason" class="form-control" rows="3" placeholder="Enter the reason for the appointment..."></textarea>
+                        <span asp-validation-for="Reason" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Notes" class="form-label"></label>
+                        <textarea asp-for="Notes" class="form-control" rows="4" placeholder="Enter any additional notes or instructions..."></textarea>
+                        <span asp-validation-for="Notes" class="text-danger"></span>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="bi bi-save"></i> Create Appointment
+                        </button>
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        (function () {
+            // Set default datetime value if model has no date
+            var ad = document.getElementById('AppointmentDate');
+            if (ad && !ad.value) {
+                var now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                ad.value = now.toISOString().slice(0, 16);
+            }
+
+            // Client-side validation: ensure patient is selected
+            var form = document.getElementById('appointmentForm');
+            if (!form) return;
+
+            form.addEventListener('submit', function (e) {
+                var patient = document.getElementById('PatientId');
+                var hasError = false;
+
+                // Clear previous classes/messages
+                if (patient) {
+                    patient.classList.remove('is-invalid');
+                }
+
+                // Check if patient is selected
+                if (patient && (!patient.value || patient.value === "" || patient.value === "0")) {
+                    patient.classList.add('is-invalid');
+                    hasError = true;
+                }
+
+                if (hasError) {
+                    e.preventDefault();
+                    // Show validation summary
+                    var vs = document.getElementById('validationSummary');
+                    if (!vs) {
+                        // Create validation summary if it doesn't exist
+                        var formStart = form.querySelector('h5');
+                        if (formStart) {
+                            vs = document.createElement('div');
+                            vs.id = 'validationSummary';
+                            vs.className = 'alert alert-danger';
+                            vs.innerHTML = '<strong><i class="bi bi-exclamation-triangle"></i> Please correct the errors below</strong><ul class="mb-0 mt-2"><li>Please select a patient.</li></ul>';
+                            formStart.parentNode.insertBefore(vs, formStart);
+                        }
+                    } else {
+                        vs.style.display = 'block';
+                    }
+                    var first = document.querySelector('.is-invalid');
+                    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return false;
+                }
+
+                // Disable submit button to prevent duplicate posts
+                var btn = document.getElementById('submitBtn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating...';
+                }
+            });
+        })();
+    </script>
+}

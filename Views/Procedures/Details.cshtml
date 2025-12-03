@@ -1,0 +1,198 @@
+@model MMGC.Models.Procedure
+@{
+    ViewData["Title"] = "Procedure Details";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-clipboard-pulse"></i> Procedure Details</h2>
+            <p>View complete procedure information</p>
+        </div>
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Procedure Information -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="mb-0"><i class="bi bi-clipboard-pulse"></i> Procedure Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-clipboard-pulse"></i> Procedure Name</strong>
+                        <p class="mb-0"><strong>@Model.ProcedureName</strong></p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-tag"></i> Procedure Type</strong>
+                        <p class="mb-0"><span class="badge bg-secondary">@Model.ProcedureType</span></p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-calendar-event"></i> Procedure Date & Time</strong>
+                        <p class="mb-0">@Model.ProcedureDate.ToString("dd MMM yyyy hh:mm tt")</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-cash-coin"></i> Procedure Fee</strong>
+                        <p class="mb-0"><strong class="text-success">PKR @Model.ProcedureFee.ToString("N2")</strong></p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-info-circle"></i> Status</strong>
+                        <p class="mb-0">
+                            @{
+                                var statusClass = Model.Status switch
+                                {
+                                    "Scheduled" => "bg-primary",
+                                    "In Progress" => "bg-warning",
+                                    "Completed" => "bg-success",
+                                    "Cancelled" => "bg-danger",
+                                    _ => "bg-secondary"
+                                };
+                            }
+                            <span class="badge @statusClass">
+                                <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> @Model.Status
+                            </span>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-person"></i> Created By</strong>
+                        <p class="mb-0">@(Model.CreatedBy ?? "System")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient & Doctor Information -->
+        <div class="card mb-4">
+            <div class="card-header" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white;">
+                <h5 class="mb-0"><i class="bi bi-people"></i> Patient & Medical Team</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-person"></i> Patient</strong>
+                        <p class="mb-0">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle bg-primary text-white me-2" style="width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    @Model.Patient?.FullName?.Substring(0, 1).ToUpper()
+                                </div>
+                                <div>
+                                    <strong>@Model.Patient?.FullName</strong><br>
+                                    <small class="text-muted">MR: @Model.Patient?.MRNumber</small>
+                                </div>
+                            </div>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-person-badge"></i> Doctor</strong>
+                        <p class="mb-0">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle bg-info text-white me-2" style="width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    @Model.Doctor?.FullName?.Substring(0, 1).ToUpper()
+                                </div>
+                                <div>
+                                    <strong>@Model.Doctor?.FullName</strong><br>
+                                    <small class="text-muted">@Model.Doctor?.Specialization</small>
+                                </div>
+                            </div>
+                        </p>
+                    </div>
+                </div>
+                @if (Model.Nurse != null)
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-person-heart"></i> Nurse</strong>
+                            <p class="mb-0">@Model.Nurse.FullName</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Treatment Notes -->
+        @if (!string.IsNullOrEmpty(Model.TreatmentNotes))
+        {
+            <div class="card mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white;">
+                    <h5 class="mb-0"><i class="bi bi-file-text"></i> Treatment Notes</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0" style="white-space: pre-wrap;">@Model.TreatmentNotes</p>
+                </div>
+            </div>
+        }
+
+        <!-- Prescription -->
+        @if (!string.IsNullOrEmpty(Model.Prescription))
+        {
+            <div class="card mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); color: white;">
+                    <h5 class="mb-0"><i class="bi bi-prescription"></i> Prescription</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0" style="white-space: pre-wrap;">@Model.Prescription</p>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Sidebar Information -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Additional Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong><i class="bi bi-calendar"></i> Created Date</strong>
+                    <p class="mb-0">@Model.CreatedDate.ToString("dd MMM yyyy hh:mm tt")</p>
+                </div>
+                @if (Model.UpdatedDate.HasValue)
+                {
+                    <div class="mb-3">
+                        <strong><i class="bi bi-pencil"></i> Updated Date</strong>
+                        <p class="mb-0">@Model.UpdatedDate.Value.ToString("dd MMM yyyy hh:mm tt")</p>
+                    </div>
+                }
+                <hr>
+                <div class="d-grid gap-2">
+                    <a asp-controller="Patients" asp-action="Details" asp-route-id="@Model.PatientId" class="btn btn-outline-primary">
+                        <i class="bi bi-person"></i> View Patient Profile
+                    </a>
+                    <a asp-controller="Doctors" asp-action="Details" asp-route-id="@Model.DoctorId" class="btn btn-outline-info">
+                        <i class="bi bi-person-badge"></i> View Doctor Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.LabTests != null && Model.LabTests.Any())
+        {
+            <div class="card">
+                <div class="card-header" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); color: white;">
+                    <h5 class="mb-0"><i class="bi bi-flask"></i> Related Lab Tests</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0"><strong>@Model.LabTests.Count()</strong> lab test(s) associated with this procedure</p>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+

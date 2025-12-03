@@ -1,0 +1,533 @@
+@model MMGC.Models.Transaction
+@{
+    ViewData["Title"] = "Create Transaction";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-cash-coin"></i> Create New Transaction</h2>
+            <p>Record a new financial transaction</p>
+        </div>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12 col-xl-12">
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="Create" method="post" id="transactionForm" novalidate>
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="All" class="alert alert-danger" role="alert" id="validationSummary" style="display:@(ViewData.ModelState.IsValid ? "none" : "block")">
+                        <strong><i class="bi bi-exclamation-triangle"></i> Please correct the errors below</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Distinct())
+                            {
+                                <li>@error</li>
+                            }
+                        </ul>
+                    </div>
+
+                    <h5 class="mb-3"><i class="bi bi-person"></i> Patient Information</h5>
+            
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="PatientId" class="form-label"></label>
+                            <select asp-for="PatientId" asp-items="ViewBag.Patients" class="form-select" id="PatientId" required>
+                                <option value="">-- Select Patient --</option>
+                            </select>
+                            <span asp-validation-for="PatientId" class="text-danger"></span>
+                            <small class="text-muted">Select a patient to view their records and calculate charges automatically</small>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" asp-for="TransactionType" id="TransactionType" value="Other" />
+
+                    <h5 class="mb-3 mt-4"><i class="bi bi-link"></i> Patient Records & Charges</h5>
+                    
+                    <div class="alert alert-info" id="patientRecordsAlert" style="display: none;">
+                        <i class="bi bi-info-circle"></i> <strong>Patient Records Found</strong>
+                        <div id="patientRecordsList" class="mt-2"></div>
+                        <div class="mt-2">
+                            <strong>Total Amount: <span id="totalCalculatedAmount" class="text-success">PKR 0.00</span></strong>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-primary" id="btnLoadAllCharges">
+                            <i class="bi bi-calculator"></i> Calculate All Patient Charges
+                        </button>
+                        <small class="text-muted ms-2 d-block mt-2">Click to automatically calculate and add all unpaid charges for this patient</small>
+                    </div>
+                    
+                    <!-- Hidden fields for related records -->
+                    <input type="hidden" asp-for="AppointmentId" id="AppointmentId" />
+                    <input type="hidden" asp-for="ProcedureId" id="ProcedureId" />
+                    <input type="hidden" asp-for="LabTestId" id="LabTestId" />
+
+                    <h5 class="mb-3 mt-4"><i class="bi bi-cash-coin"></i> Payment Details</h5>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label"></label>
+                        <input asp-for="Description" class="form-control" placeholder="Enter transaction description" id="Description" />
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                        <small class="text-muted">Description will be auto-filled when you calculate charges</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Amount" class="form-label"></label>
+                            <div class="input-group">
+                                <span class="input-group-text">PKR</span>
+                                <input asp-for="Amount" class="form-control" type="number" step="0.01" min="0" placeholder="0.00" required id="Amount" />
+                            </div>
+                            <span asp-validation-for="Amount" class="text-danger"></span>
+                            <small class="text-muted">Amount will be auto-calculated when you select patient records</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PaymentMode" class="form-label"></label>
+                            <select asp-for="PaymentMode" class="form-select" id="PaymentMode" required>
+                                <option value="">-- Select Payment Mode --</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Card">Card</option>
+                                <option value="Bank">Bank Transfer</option>
+                                <option value="Online">Online Payment</option>
+                            </select>
+                            <span asp-validation-for="PaymentMode" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="TransactionDate" class="form-label"></label>
+                            <input asp-for="TransactionDate" class="form-control" type="datetime-local" />
+                            <span asp-validation-for="TransactionDate" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Status" class="form-label"></label>
+                            <select asp-for="Status" class="form-select">
+                                <option value="Pending">Pending</option>
+                                <option value="Completed" selected>Completed</option>
+                                <option value="Refunded">Refunded</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                            <span asp-validation-for="Status" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ReferenceNumber" class="form-label"></label>
+                        <input asp-for="ReferenceNumber" class="form-control" placeholder="Enter reference number (optional)" />
+                        <small class="form-text text-muted">Transaction reference, check number, or receipt number.</small>
+                        <span asp-validation-for="ReferenceNumber" class="text-danger"></span>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="bi bi-save"></i> Create Transaction
+                        </button>
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        (function () {
+            // Set default datetime value if model has no date
+            var td = document.getElementById('TransactionDate');
+            if (td && !td.value) {
+                var now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                td.value = now.toISOString().slice(0, 16);
+            }
+
+            var patientIdEl = document.getElementById('PatientId');
+            var appointmentIdEl = document.getElementById('AppointmentId');
+            var procedureIdEl = document.getElementById('ProcedureId');
+            var labTestIdEl = document.getElementById('LabTestId');
+            var amountEl = document.getElementById('Amount');
+            var descriptionEl = document.getElementById('Description');
+            var patientRecordsAlert = document.getElementById('patientRecordsAlert');
+            var patientRecordsList = document.getElementById('patientRecordsList');
+            var totalCalculatedAmount = document.getElementById('totalCalculatedAmount');
+            var btnLoadAllCharges = document.getElementById('btnLoadAllCharges');
+            
+            // Store selected items for form submission
+            var selectedAppointmentIds = [];
+            var selectedProcedureIds = [];
+            var selectedLabTestIds = [];
+
+            // Clear description on page load if it contains "undefined"
+            if (descriptionEl && descriptionEl.value && descriptionEl.value.includes('undefined')) {
+                descriptionEl.value = '';
+            }
+            
+            // Load patient records when patient is selected (just to show summary, not for dropdowns)
+            if (patientIdEl) {
+                patientIdEl.addEventListener('change', function() {
+                    var patientId = this.value;
+                    if (patientId && patientId !== '' && patientId !== '0') {
+                        loadPatientRecords(patientId);
+                    } else {
+                        clearPatientRecords();
+                    }
+                });
+            }
+
+            // Load all charges button
+            if (btnLoadAllCharges) {
+                btnLoadAllCharges.addEventListener('click', function() {
+                    var patientId = patientIdEl ? patientIdEl.value : null;
+                    if (!patientId || patientId === '') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Patient Required',
+                            text: 'Please select a patient first',
+                            confirmButtonText: 'OK'
+                        });
+                        return;
+                    }
+                    loadAllCharges(patientId);
+                });
+            }
+
+            // No dropdowns to listen to - everything is handled by the button
+
+            function loadPatientRecords(patientId) {
+                if (!patientId || patientId === '' || patientId === '0') {
+                    clearPatientRecords();
+                    return;
+                }
+                
+                console.log('Loading patient records for patient ID:', patientId);
+                
+                fetch('@Url.Action("GetPatientRecords", "Transactions")?patientId=' + patientId)
+                    .then(response => {
+                        console.log('Response status:', response.status);
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok: ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Received data:', data);
+                        
+                        if (data.success) {
+                            displayPatientRecords(data);
+                            updateDropdowns(data);
+                            
+                            // Show message if no unpaid records found
+                            var totalRecords = (data.appointments?.length || 0) + 
+                                             (data.procedures?.length || 0) + 
+                                             (data.labTests?.length || 0);
+                            if (totalRecords === 0) {
+                                Swal.fire({
+                                    icon: 'info',
+                                    title: 'No Unpaid Records',
+                                    text: 'This patient has no unpaid appointments, procedures, or lab tests.',
+                                    confirmButtonText: 'OK'
+                                });
+                            }
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message || 'Failed to load patient records',
+                                confirmButtonText: 'OK'
+                            });
+                            clearPatientRecords();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading patient records:', error);
+                        
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to load patient records. Please try again.',
+                            confirmButtonText: 'OK'
+                        });
+                    });
+            }
+
+            function displayPatientRecords(data) {
+                var html = '<ul class="list-unstyled mb-0">';
+                var total = 0;
+
+                if (data.appointments && Array.isArray(data.appointments) && data.appointments.length > 0) {
+                    html += '<li class="mb-2"><strong>Appointments:</strong></li>';
+                    data.appointments.forEach(function(item) {
+                        if (item && item.Description && item.Amount !== undefined) {
+                            var amount = parseFloat(item.Amount) || 0;
+                            html += '<li class="ms-3">' + item.Description + ' - <strong>PKR ' + amount.toFixed(2) + '</strong></li>';
+                            total += amount;
+                        }
+                    });
+                }
+
+                if (data.procedures && Array.isArray(data.procedures) && data.procedures.length > 0) {
+                    html += '<li class="mb-2 mt-2"><strong>Procedures:</strong></li>';
+                    data.procedures.forEach(function(item) {
+                        if (item && item.Description && item.Amount !== undefined) {
+                            var amount = parseFloat(item.Amount) || 0;
+                            html += '<li class="ms-3">' + item.Description + ' - <strong>PKR ' + amount.toFixed(2) + '</strong></li>';
+                            total += amount;
+                        }
+                    });
+                }
+
+                if (data.labTests && Array.isArray(data.labTests) && data.labTests.length > 0) {
+                    html += '<li class="mb-2 mt-2"><strong>Lab Tests:</strong></li>';
+                    data.labTests.forEach(function(item) {
+                        if (item && item.Description && item.Amount !== undefined) {
+                            var amount = parseFloat(item.Amount) || 0;
+                            html += '<li class="ms-3">' + item.Description + ' - <strong>PKR ' + amount.toFixed(2) + '</strong></li>';
+                            total += amount;
+                        }
+                    });
+                }
+
+                html += '</ul>';
+
+                if (total > 0) {
+                    patientRecordsList.innerHTML = html;
+                    totalCalculatedAmount.textContent = 'PKR ' + total.toFixed(2);
+                    patientRecordsAlert.style.display = 'block';
+                } else {
+                    patientRecordsAlert.style.display = 'none';
+                }
+            }
+
+            function updateDropdowns(data) {
+                // Store IDs for form submission (we'll use the first one or comma-separated for multiple)
+                selectedAppointmentIds = [];
+                selectedProcedureIds = [];
+                selectedLabTestIds = [];
+                
+                if (data.appointments && Array.isArray(data.appointments) && data.appointments.length > 0) {
+                    selectedAppointmentIds = data.appointments
+                        .filter(item => item && item.Id)
+                        .map(item => item.Id);
+                }
+                
+                if (data.procedures && Array.isArray(data.procedures) && data.procedures.length > 0) {
+                    selectedProcedureIds = data.procedures
+                        .filter(item => item && item.Id)
+                        .map(item => item.Id);
+                }
+                
+                if (data.labTests && Array.isArray(data.labTests) && data.labTests.length > 0) {
+                    selectedLabTestIds = data.labTests
+                        .filter(item => item && item.Id)
+                        .map(item => item.Id);
+                }
+            }
+
+            function loadAllCharges(patientId) {
+                Swal.fire({
+                    title: 'Calculating...',
+                    text: 'Please wait while we calculate all charges.',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                fetch('@Url.Action("GetPatientRecords", "Transactions")?patientId=' + patientId)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            var total = data.totalAmount || 0;
+                            
+                            if (total <= 0) {
+                                Swal.fire({
+                                    icon: 'info',
+                                    title: 'No Charges',
+                                    text: 'This patient has no unpaid charges.',
+                                    confirmButtonText: 'OK'
+                                });
+                                return;
+                            }
+                            
+                            // Store selected IDs and set hidden fields (using first ID of each type)
+                            selectedAppointmentIds = [];
+                            selectedProcedureIds = [];
+                            selectedLabTestIds = [];
+                            
+                            if (data.appointments && Array.isArray(data.appointments) && data.appointments.length > 0) {
+                                selectedAppointmentIds = data.appointments
+                                    .filter(item => item && item.Id)
+                                    .map(item => item.Id);
+                                // Set first appointment ID in hidden field
+                                if (appointmentIdEl && selectedAppointmentIds.length > 0) {
+                                    appointmentIdEl.value = selectedAppointmentIds[0];
+                                }
+                            }
+                            
+                            if (data.procedures && Array.isArray(data.procedures) && data.procedures.length > 0) {
+                                selectedProcedureIds = data.procedures
+                                    .filter(item => item && item.Id)
+                                    .map(item => item.Id);
+                                // Set first procedure ID in hidden field
+                                if (procedureIdEl && selectedProcedureIds.length > 0) {
+                                    procedureIdEl.value = selectedProcedureIds[0];
+                                }
+                            }
+                            
+                            if (data.labTests && Array.isArray(data.labTests) && data.labTests.length > 0) {
+                                selectedLabTestIds = data.labTests
+                                    .filter(item => item && item.Id)
+                                    .map(item => item.Id);
+                                // Set first lab test ID in hidden field
+                                if (labTestIdEl && selectedLabTestIds.length > 0) {
+                                    labTestIdEl.value = selectedLabTestIds[0];
+                                }
+                            }
+                            
+                            // Build description with proper counts
+                            var descParts = [];
+                            var appointmentCount = (data.appointments && Array.isArray(data.appointments)) ? data.appointments.length : 0;
+                            var procedureCount = (data.procedures && Array.isArray(data.procedures)) ? data.procedures.length : 0;
+                            var labTestCount = (data.labTests && Array.isArray(data.labTests)) ? data.labTests.length : 0;
+                            
+                            if (appointmentCount > 0) {
+                                descParts.push(appointmentCount + ' Appointment(s)');
+                            }
+                            if (procedureCount > 0) {
+                                descParts.push(procedureCount + ' Procedure(s)');
+                            }
+                            if (labTestCount > 0) {
+                                descParts.push(labTestCount + ' Lab Test(s)');
+                            }
+                            
+                            // Update amount and description
+                            if (amountEl) {
+                                amountEl.value = total.toFixed(2);
+                            }
+                            
+                            if (descriptionEl) {
+                                if (descParts.length > 0) {
+                                    descriptionEl.value = 'Payment for: ' + descParts.join(', ');
+                                } else {
+                                    descriptionEl.value = 'Payment for patient services';
+                                }
+                            }
+                            
+                            // Display patient records
+                            displayPatientRecords(data);
+                            
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Charges Calculated',
+                                html: 'Total amount: <strong>PKR ' + total.toFixed(2) + '</strong><br>All unpaid items have been selected.',
+                                confirmButtonText: 'OK'
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message || 'Failed to calculate charges',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading charges:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to load patient charges. Please try again.',
+                            confirmButtonText: 'OK'
+                        });
+                    });
+            }
+
+            // No need for calculateSelectedAmount since we're using the button
+
+            function clearPatientRecords() {
+                if (patientRecordsAlert) patientRecordsAlert.style.display = 'none';
+                if (appointmentIdEl) appointmentIdEl.value = '';
+                if (procedureIdEl) procedureIdEl.value = '';
+                if (labTestIdEl) labTestIdEl.value = '';
+                if (amountEl) amountEl.value = '';
+                if (descriptionEl) descriptionEl.value = '';
+                selectedAppointmentIds = [];
+                selectedProcedureIds = [];
+                selectedLabTestIds = [];
+            }
+
+            // Client-side validation
+            var form = document.getElementById('transactionForm');
+            if (!form) return;
+
+            form.addEventListener('submit', function (e) {
+                var patient = document.getElementById('PatientId');
+                var transactionType = document.getElementById('TransactionType');
+                var amount = document.getElementById('Amount');
+                var paymentMode = document.getElementById('PaymentMode');
+                var hasError = false;
+
+                // Clear previous classes
+                [patient, transactionType, amount, paymentMode].forEach(el => {
+                    if (el) el.classList.remove('is-invalid');
+                });
+
+                // Check required fields
+                if (patient && (!patient.value || patient.value === "" || patient.value === "0")) {
+                    patient.classList.add('is-invalid');
+                    hasError = true;
+                }
+
+                // Transaction type is now automatic, no need to validate
+
+                if (amount && (!amount.value || parseFloat(amount.value) <= 0)) {
+                    amount.classList.add('is-invalid');
+                    hasError = true;
+                }
+
+                if (paymentMode && !paymentMode.value) {
+                    paymentMode.classList.add('is-invalid');
+                    hasError = true;
+                }
+
+                if (hasError) {
+                    e.preventDefault();
+                    var vs = document.getElementById('validationSummary');
+                    if (vs) vs.style.display = 'block';
+                    var first = document.querySelector('.is-invalid');
+                    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return false;
+                }
+
+                // Disable submit button
+                var btn = document.getElementById('submitBtn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating...';
+                }
+            });
+        })();
+    </script>
+}
+

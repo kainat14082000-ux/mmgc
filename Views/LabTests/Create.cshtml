@@ -1,0 +1,160 @@
+@model MMGC.Models.LabTest
+@{
+    ViewData["Title"] = "Create Lab Test";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-flask"></i> Create New Lab Test</h2>
+            <p>Record a new laboratory test for a patient</p>
+        </div>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-10 col-xl-8">
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="Create" method="post" id="labTestForm" novalidate>
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="All" class="alert alert-danger" role="alert" id="validationSummary" style="display:@(ViewData.ModelState.IsValid ? "none" : "block")">
+                        <strong><i class="bi bi-exclamation-triangle"></i> Please correct the errors below</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Distinct())
+                            {
+                                <li>@error</li>
+                            }
+                        </ul>
+                    </div>
+
+                    <h5 class="mb-3"><i class="bi bi-person"></i> Patient & Category Information</h5>
+            
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PatientId" class="form-label"></label>
+                            <select asp-for="PatientId" asp-items="ViewBag.Patients" class="form-select" id="PatientId" required>
+                                <option value="">-- Select Patient --</option>
+                            </select>
+                            <span asp-validation-for="PatientId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="LabTestCategoryId" class="form-label"></label>
+                            <select asp-for="LabTestCategoryId" asp-items="ViewBag.Categories" class="form-select" id="LabTestCategoryId" required>
+                                <option value="">-- Select Category --</option>
+                            </select>
+                            <span asp-validation-for="LabTestCategoryId" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ProcedureId" class="form-label"></label>
+                        <select asp-for="ProcedureId" asp-items="ViewBag.Procedures" class="form-select" id="ProcedureId">
+                            <option value="">-- Select Procedure (Optional) --</option>
+                        </select>
+                        <span asp-validation-for="ProcedureId" class="text-danger"></span>
+                        <small class="form-text text-muted">Link this test to a procedure if applicable.</small>
+                    </div>
+
+                    <h5 class="mb-3 mt-4"><i class="bi bi-flask"></i> Test Details</h5>
+
+                    <div class="mb-3">
+                        <label asp-for="TestName" class="form-label"></label>
+                        <input asp-for="TestName" class="form-control" placeholder="e.g., Complete Blood Count, X-Ray Chest" />
+                        <span asp-validation-for="TestName" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="TestDate" class="form-label"></label>
+                            <input asp-for="TestDate" class="form-control" type="datetime-local" />
+                            <span asp-validation-for="TestDate" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="TestFee" class="form-label"></label>
+                            <div class="input-group">
+                                <span class="input-group-text">PKR</span>
+                                <input asp-for="TestFee" class="form-control" type="number" step="0.01" min="0" placeholder="0.00" />
+                            </div>
+                            <span asp-validation-for="TestFee" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="bi bi-save"></i> Create Lab Test
+                        </button>
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        (function () {
+            // Set default datetime value if model has no date
+            var td = document.getElementById('TestDate');
+            if (td && !td.value) {
+                var now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                td.value = now.toISOString().slice(0, 16);
+            }
+
+            // Client-side validation
+            var form = document.getElementById('labTestForm');
+            if (!form) return;
+
+            form.addEventListener('submit', function (e) {
+                var patient = document.getElementById('PatientId');
+                var category = document.getElementById('LabTestCategoryId');
+                var hasError = false;
+
+                // Clear previous classes
+                if (patient) patient.classList.remove('is-invalid');
+                if (category) category.classList.remove('is-invalid');
+
+                // Check if patient is selected
+                if (patient && (!patient.value || patient.value === "" || patient.value === "0")) {
+                    patient.classList.add('is-invalid');
+                    hasError = true;
+                }
+
+                // Check if category is selected
+                if (category && (!category.value || category.value === "" || category.value === "0")) {
+                    category.classList.add('is-invalid');
+                    hasError = true;
+                }
+
+                if (hasError) {
+                    e.preventDefault();
+                    var vs = document.getElementById('validationSummary');
+                    if (vs) vs.style.display = 'block';
+                    var first = document.querySelector('.is-invalid');
+                    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return false;
+                }
+
+                // Disable submit button
+                var btn = document.getElementById('submitBtn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating...';
+                }
+            });
+        })();
+    </script>
+}
+

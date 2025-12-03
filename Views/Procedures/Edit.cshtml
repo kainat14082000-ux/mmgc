@@ -1,0 +1,246 @@
+@model MMGC.Models.Procedure
+@{
+    ViewData["Title"] = "Edit Procedure";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+    var patients = ViewBag.PatientsList as IEnumerable<MMGC.Models.Patient>;
+    var doctors = ViewBag.DoctorsList as IEnumerable<MMGC.Models.Doctor>;
+    var nurses = ViewBag.NursesList as IEnumerable<MMGC.Models.Nurse>;
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-pencil"></i> Edit Procedure</h2>
+            <p>Update procedure information</p>
+        </div>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-10 col-xl-8">
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="Edit" method="post" id="procedureForm">
+                    <input type="hidden" asp-for="Id" />
+                    <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+                    
+                    <h5 class="mb-3"><i class="bi bi-person"></i> Patient & Doctor Information</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PatientId" class="form-label"></label>
+                            <select asp-for="PatientId" class="form-select" id="PatientId">
+                                <option value="">-- Select Patient --</option>
+                                @if (patients != null)
+                                {
+                                    @foreach (var patient in patients)
+                                    {
+                                        var isSelected = Model.PatientId == patient.Id;
+                                        if (isSelected)
+                                        {
+                                            <option value="@patient.Id" selected="selected">@patient.FullName (MR: @patient.MRNumber)</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@patient.Id">@patient.FullName (MR: @patient.MRNumber)</option>
+                                        }
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="PatientId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="DoctorId" class="form-label"></label>
+                            <select asp-for="DoctorId" class="form-select" id="DoctorId">
+                                <option value="">-- Select Doctor --</option>
+                                @if (doctors != null)
+                                {
+                                    @foreach (var doctor in doctors)
+                                    {
+                                        var isSelected = Model.DoctorId == doctor.Id;
+                                        if (isSelected)
+                                        {
+                                            <option value="@doctor.Id" selected="selected">@doctor.FullName - @doctor.Specialization</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@doctor.Id">@doctor.FullName - @doctor.Specialization</option>
+                                        }
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="DoctorId" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="NurseId" class="form-label"></label>
+                        <select asp-for="NurseId" class="form-select" id="NurseId">
+                            <option value="">-- Select Nurse (Optional) --</option>
+                            @if (nurses != null)
+                            {
+                                @foreach (var nurse in nurses)
+                                {
+                                    var isSelected = Model.NurseId == nurse.Id;
+                                    if (isSelected)
+                                    {
+                                        <option value="@nurse.Id" selected="selected">@nurse.FullName</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@nurse.Id">@nurse.FullName</option>
+                                    }
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="NurseId" class="text-danger"></span>
+                    </div>
+
+                    <h5 class="mb-3 mt-4"><i class="bi bi-clipboard-pulse"></i> Procedure Details</h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ProcedureName" class="form-label"></label>
+                            <input asp-for="ProcedureName" class="form-control" placeholder="e.g., Normal Delivery, C-section, Ultrasound" required />
+                            <span asp-validation-for="ProcedureName" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ProcedureType" class="form-label"></label>
+                            <select asp-for="ProcedureType" class="form-select" required>
+                                <option value="">-- Select Type --</option>
+                                <option value="Normal Delivery">Normal Delivery</option>
+                                <option value="C-section">C-section</option>
+                                <option value="Ultrasound">Ultrasound</option>
+                                <option value="Gynaecological">Gynaecological Treatment</option>
+                                <option value="Surgery">Surgery</option>
+                                <option value="OPD">OPD Procedure</option>
+                                <option value="IPD">IPD Procedure</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <span asp-validation-for="ProcedureType" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ProcedureDate" class="form-label"></label>
+                            <input asp-for="ProcedureDate" class="form-control" type="datetime-local" required />
+                            <span asp-validation-for="ProcedureDate" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ProcedureFee" class="form-label"></label>
+                            <div class="input-group">
+                                <span class="input-group-text">PKR</span>
+                                <input asp-for="ProcedureFee" class="form-control" type="number" step="0.01" min="0" placeholder="0.00" required />
+                            </div>
+                            <span asp-validation-for="ProcedureFee" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Status" class="form-label"></label>
+                        <select asp-for="Status" class="form-select">
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                        <span asp-validation-for="Status" class="text-danger"></span>
+                    </div>
+
+                    <h5 class="mb-3 mt-4"><i class="bi bi-file-text"></i> Medical Notes</h5>
+
+                    <div class="mb-3">
+                        <label asp-for="TreatmentNotes" class="form-label"></label>
+                        <textarea asp-for="TreatmentNotes" class="form-control" rows="4" placeholder="Enter treatment notes, observations, and details about the procedure..."></textarea>
+                        <span asp-validation-for="TreatmentNotes" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Prescription" class="form-label"></label>
+                        <textarea asp-for="Prescription" class="form-control" rows="4" placeholder="Enter prescription details, medications, and dosage instructions..."></textarea>
+                        <span asp-validation-for="Prescription" class="text-danger"></span>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="bi bi-save"></i> Update Procedure
+                        </button>
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            // Format datetime for datetime-local input
+            @{
+                var procedureDateStr = Model.ProcedureDate.ToString("yyyy-MM-ddTHH:mm");
+            }
+            const procedureDate = '@procedureDateStr';
+            $('#ProcedureDate').val(procedureDate);
+
+            $('#procedureForm').on('submit', function(e) {
+                // Validate PatientId and DoctorId are not empty
+                const patientId = $('#PatientId').val();
+                const doctorId = $('#DoctorId').val();
+                
+                if (!patientId || patientId === '') {
+                    e.preventDefault();
+                    $('#PatientId').addClass('is-invalid');
+                    $('html, body').animate({
+                        scrollTop: $('#PatientId').offset().top - 100
+                    }, 500);
+                    return false;
+                } else {
+                    $('#PatientId').removeClass('is-invalid');
+                }
+                
+                if (!doctorId || doctorId === '') {
+                    e.preventDefault();
+                    $('#DoctorId').addClass('is-invalid');
+                    $('html, body').animate({
+                        scrollTop: $('#DoctorId').offset().top - 100
+                    }, 500);
+                    return false;
+                } else {
+                    $('#DoctorId').removeClass('is-invalid');
+                }
+                
+                if (!$(this).valid()) {
+                    e.preventDefault();
+                    $('html, body').animate({
+                        scrollTop: $('.text-danger:visible:first').offset().top - 100
+                    }, 500);
+                    return false;
+                }
+                $('#submitBtn').prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Updating...');
+            });
+            
+            // Remove invalid class on change
+            $('#PatientId, #DoctorId').on('change', function() {
+                if ($(this).val() && $(this).val() !== '') {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+
+            $('input, select, textarea').on('blur', function() {
+                $(this).valid();
+            });
+        });
+    </script>
+}
+

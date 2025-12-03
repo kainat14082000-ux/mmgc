@@ -1,0 +1,257 @@
+@model IEnumerable<MMGC.Models.Appointment>
+@{
+    ViewData["Title"] = "Appointments";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-calendar-check"></i> Appointments</h2>
+            <p>Manage all patient appointments</p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> New Appointment
+        </a>
+    </div>
+</div>
+
+<!-- Success Message -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Search and Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" id="tableSearch" class="form-control" placeholder="Search appointments...">
+                </div>
+            </div>
+            <div class="col-md-6 text-end">
+                <span class="badge bg-primary fs-6">Total: @Model.Count() Appointments</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<!-- Appointments Table -->
+<div class="card">
+    <div class="card-body">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th><i class="bi bi-person"></i> Patient</th>
+                            <th><i class="bi bi-person-badge"></i> Doctor</th>
+                            <th><i class="bi bi-calendar"></i> Date & Time</th>
+                            <th><i class="bi bi-tag"></i> Type</th>
+                            <th><i class="bi bi-info-circle"></i> Status</th>
+                            <th><i class="bi bi-gear"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle bg-primary text-white me-2" style="width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                            @(item.Patient?.FullName?.Substring(0, 1).ToUpper() ?? "P")
+                                        </div>
+                                        <strong>@item.Patient?.FullName</strong>
+                                    </div>
+                                </td>
+                                <td>@(item.Doctor?.FullName ?? "Not Assigned")</td>
+                                <td>
+                                    <i class="bi bi-clock-fill text-primary"></i> 
+                                    @item.AppointmentDate.ToString("dd MMM yyyy hh:mm tt")
+                                </td>
+                                <td><span class="badge bg-secondary">@item.AppointmentType</span></td>
+                                <td>
+                                    @{
+                                        var statusClass = item.Status switch
+                                        {
+                                            "Scheduled" => "bg-primary",
+                                            "Confirmed" => "bg-success",
+                                            "Completed" => "bg-info",
+                                            "Cancelled" => "bg-danger",
+                                            _ => "bg-secondary"
+                                        };
+                                    }
+                                    <span class="badge @statusClass">
+                                        <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> @item.Status
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning" data-bs-toggle="tooltip" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button onclick="sendSMS(@item.Id)" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Send SMS">
+                                            <i class="bi bi-chat-text"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger delete-appointment" data-appointment-id="@item.Id" data-patient-name="@item.Patient?.FullName" data-appointment-date="@item.AppointmentDate.ToString("dd MMM yyyy hh:mm tt")" data-bs-toggle="tooltip" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-calendar-x" style="font-size: 4rem; color: #e0e0e0;"></i>
+                <p class="text-muted mt-3 mb-0">No appointments found.</p>
+                <a asp-action="Create" class="btn btn-primary mt-3">
+                    <i class="bi bi-plus-circle"></i> Schedule First Appointment
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Search functionality
+        $(document).ready(function() {
+            $('#tableSearch').on('keyup', function() {
+                var value = $(this).val().toLowerCase();
+                $('table tbody tr').filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+        });
+
+        function sendSMS(id) {
+            Swal.fire({
+                title: 'Send SMS Notification?',
+                text: 'Are you sure you want to send an SMS notification for this appointment?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-send"></i> Yes, send SMS',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading state
+                    Swal.fire({
+                        title: 'Sending SMS...',
+                        text: 'Please wait while we send the SMS notification.',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    fetch(`/Appointments/SendSMS/${id}`, { method: 'POST' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    title: 'SMS Sent!',
+                                    html: data.message || 'SMS sent successfully!<br><br><small>Note: If using a Twilio trial account, SMS will only be delivered to verified phone numbers.</small>',
+                                    icon: 'success',
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'SMS Failed',
+                                    html: data.message || 'Failed to send SMS. Please check the logs for details.',
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Error sending SMS: ' + error.message,
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        });
+                }
+            });
+        }
+
+        // SweetAlert Delete Confirmation
+        $('.delete-appointment').on('click', function() {
+            const appointmentId = $(this).data('appointment-id');
+            const patientName = $(this).data('patient-name') || 'Unknown';
+            const appointmentDate = $(this).data('appointment-date') || 'Unknown';
+            const deleteUrl = '@Url.Action("Delete", "Appointments")';
+            const token = $('input[name="__RequestVerificationToken"]').val();
+
+            Swal.fire({
+                title: 'Are you sure?',
+                html: `You are about to delete the appointment for <strong>${patientName}</strong><br>scheduled on <strong>${appointmentDate}</strong>.<br><br>This action cannot be undone!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: '<i class="bi bi-trash"></i> Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const formData = new FormData();
+                    formData.append('id', appointmentId);
+                    formData.append('__RequestVerificationToken', token);
+                    
+                    fetch(deleteUrl, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.text();
+                        }
+                        throw new Error('Network response was not ok');
+                    })
+                    .then(() => {
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: 'Appointment has been deleted.',
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Failed to delete appointment: ' + error.message,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    });
+                }
+            });
+        });
+    </script>
+}

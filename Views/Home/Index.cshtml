@@ -1,0 +1,94 @@
+﻿@{
+    ViewData["Title"] = "Home";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MMGC Hospital Management System</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .welcome-container {
+            text-align: center;
+            color: white;
+        }
+        
+        .welcome-container i {
+            font-size: 6rem;
+            margin-bottom: 30px;
+            animation: pulse 2s infinite;
+        }
+        
+        .welcome-container h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        
+        .welcome-container p {
+            font-size: 1.3rem;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+        
+        .btn-welcome {
+            background: white;
+            color: #667eea;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 50px;
+            border: none;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-welcome:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            color: #667eea;
+        }
+        
+        @@keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="welcome-container">
+        <i class="bi bi-hospital"></i>
+        <h1>MMGC Hospital</h1>
+        <p>Hospital Management System</p>
+        <a href="/Account/Login" class="btn-welcome">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Login to Dashboard
+        </a>
+    </div>
+    
+    <script>
+        // Auto redirect if already logged in
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <text>window.location.href = '/Admin/Dashboard';</text>
+        }
+    </script>
+</body>
+</html>

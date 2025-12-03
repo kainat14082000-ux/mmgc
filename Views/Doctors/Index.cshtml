@@ -1,0 +1,326 @@
+@model IEnumerable<MMGC.Models.Doctor>
+@{
+    ViewData["Title"] = "Doctors";
+    Layout = "~/Views/Shared/_LayoutWithSidebar.cshtml";
+    var doctorsWithStats = ViewBag.DoctorsWithStats as IEnumerable<dynamic>;
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-person-badge"></i> Doctors</h2>
+            <p>Manage medical staff</p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add New Doctor
+        </a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@Html.AntiForgeryToken()
+
+<!-- Search and Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" id="tableSearch" class="form-control" placeholder="Search doctors by name, specialization...">
+                </div>
+            </div>
+            <div class="col-md-6 text-end">
+                <span class="badge bg-info fs-6">Total: @Model.Count() Doctors</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Doctors Table -->
+<div class="card">
+    <div class="card-body">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th><i class="bi bi-person"></i> Name</th>
+                            <th><i class="bi bi-award"></i> Specialization</th>
+                            <th><i class="bi bi-telephone"></i> Contact</th>
+                            <th><i class="bi bi-envelope"></i> Email</th>
+                            <th><i class="bi bi-calendar-check"></i> Appointments</th>
+                            <th><i class="bi bi-cash"></i> Total Revenue</th>
+                            <th><i class="bi bi-toggle-on"></i> Status</th>
+                            <th><i class="bi bi-gear"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            var stats = doctorsWithStats?.Cast<dynamic>().FirstOrDefault(d => d.Id == item.Id);
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle bg-info text-white me-2" style="width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                            @item.FullName.Substring(0, 1).ToUpper()
+                                        </div>
+                                        <strong>@item.FullName</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">@item.Specialization</span>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.ContactNumber))
+                                    {
+                                        <i class="bi bi-phone"></i>
+                                        @item.ContactNumber
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.Email))
+                                    {
+                                        <i class="bi bi-envelope-fill text-info"></i>
+                                        @item.Email
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">@(stats?.TotalAppointments ?? 0)</span>
+                                </td>
+                                <td>
+                                    <strong class="text-success">PKR @((stats?.TotalRevenue ?? 0).ToString("N2"))</strong>
+                                </td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-x-circle"></i> Inactive
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="View Profile">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning" data-bs-toggle="tooltip" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-danger delete-doctor" data-doctor-id="@item.Id" data-doctor-name="@item.FullName" data-bs-toggle="tooltip" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-person-badge" style="font-size: 4rem; color: #e0e0e0;"></i>
+                <p class="text-muted mt-3 mb-0">No doctors added yet.</p>
+                <a asp-action="Create" class="btn btn-primary mt-3">
+                    <i class="bi bi-plus-circle"></i> Add First Doctor
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+
+            // SweetAlert Delete Confirmation
+            $('.delete-doctor').on('click', function() {
+                const doctorId = $(this).data('doctor-id');
+                const doctorName = $(this).data('doctor-name');
+                const deleteUrl = '@Url.Action("Delete", "Doctors")';
+                const token = $('input[name="__RequestVerificationToken"]').val();
+
+                function attemptDelete(forceDelete) {
+                    const formData = new FormData();
+                    formData.append('id', doctorId);
+                    formData.append('forceDelete', forceDelete);
+                    formData.append('__RequestVerificationToken', token);
+
+                    return fetch(deleteUrl, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    });
+                }
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    html: `You are about to delete <strong>${doctorName}</strong>.<br>This action cannot be undone!`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: '<i class="bi bi-trash"></i> Yes, delete it!',
+                    cancelButtonText: '<i class="bi bi-x-circle"></i> Cancel',
+                    reverseButtons: true,
+                    showLoaderOnConfirm: true,
+                    preConfirm: () => {
+                        return attemptDelete(false)
+                        .then(data => {
+                            if (!data.success) {
+                                // Check if this is a warning about cascade records (no blocking records)
+                                if (data.isWarning && data.cascadeRecords && data.cascadeRecords.length > 0) {
+                                    // Show warning about cascade records that will be deleted
+                                    const cascadeList = data.cascadeRecords.map(r => `<li>${r}</li>`).join('');
+                                    Swal.fire({
+                                        title: 'Warning: Related Records Will Be Deleted',
+                                        html: `<p><strong>${data.message}</strong></p><p style="margin-top: 10px;">The following related records will also be deleted:</p><ul style="text-align: left; margin-top: 10px;">${cascadeList}</ul><p style="margin-top: 15px; color: #d33;"><strong>This action cannot be undone!</strong></p>`,
+                                        icon: 'warning',
+                                        showCancelButton: true,
+                                        confirmButtonColor: '#d33',
+                                        cancelButtonColor: '#3085d6',
+                                        confirmButtonText: '<i class="bi bi-trash"></i> Delete Anyway',
+                                        cancelButtonText: '<i class="bi bi-x-circle"></i> Cancel',
+                                        reverseButtons: true,
+                                        showLoaderOnConfirm: true,
+                                        preConfirm: () => {
+                                            return attemptDelete(true)
+                                            .then(deleteData => {
+                                                if (!deleteData.success) {
+                                                    throw new Error(deleteData.message || 'Failed to delete doctor');
+                                                }
+                                                return deleteData;
+                                            });
+                                        }
+                                    }).then((deleteResult) => {
+                                        if (deleteResult.isConfirmed) {
+                                            Swal.fire({
+                                                title: 'Deleted!',
+                                                text: deleteResult.value.message || 'Doctor and all related records have been deleted.',
+                                                icon: 'success',
+                                                confirmButtonColor: '#3085d6',
+                                                timer: 2000,
+                                                timerProgressBar: true
+                                            }).then(() => {
+                                                location.reload();
+                                            });
+                                        }
+                                    });
+                                    // Prevent the original promise from resolving
+                                    return new Promise(() => {}); // Hang forever
+                                }
+                                // Check if force delete is available (blocking records exist)
+                                else if (data.canForceDelete && data.blockingRecords && data.blockingRecords.length > 0) {
+                                    // Show blocking records and offer force delete
+                                    const blockingList = data.blockingRecords.map(r => `<li>${r}</li>`).join('');
+                                    const cascadeList = data.cascadeRecords && data.cascadeRecords.length > 0 
+                                        ? `<p style="margin-top: 10px;">Also will be deleted:</p><ul style="text-align: left; margin-top: 5px;">${data.cascadeRecords.map(r => `<li>${r}</li>`).join('')}</ul>`
+                                        : '';
+                                    Swal.fire({
+                                        title: 'Cannot Delete',
+                                        html: `<p>${data.message}</p><ul style="text-align: left; margin-top: 10px;">${blockingList}</ul>${cascadeList}<p style="margin-top: 15px; color: #d33;"><strong>Warning:</strong> Force delete will remove this doctor even though it's referenced by other records. This may cause data inconsistency.</p>`,
+                                        icon: 'error',
+                                        showCancelButton: true,
+                                        confirmButtonColor: '#d33',
+                                        cancelButtonColor: '#3085d6',
+                                        confirmButtonText: '<i class="bi bi-exclamation-triangle"></i> Force Delete Anyway',
+                                        cancelButtonText: '<i class="bi bi-x-circle"></i> Cancel',
+                                        reverseButtons: true,
+                                        showLoaderOnConfirm: true,
+                                        preConfirm: () => {
+                                            return attemptDelete(true)
+                                            .then(forceData => {
+                                                if (!forceData.success) {
+                                                    throw new Error(forceData.message || 'Failed to force delete doctor');
+                                                }
+                                                return forceData;
+                                            });
+                                        }
+                                    }).then((forceResult) => {
+                                        if (forceResult.isConfirmed) {
+                                            Swal.fire({
+                                                title: 'Force Deleted!',
+                                                text: forceResult.value.message || 'Doctor has been force deleted.',
+                                                icon: 'warning',
+                                                confirmButtonColor: '#3085d6',
+                                                timer: 2000,
+                                                timerProgressBar: true
+                                            }).then(() => {
+                                                location.reload();
+                                            });
+                                        }
+                                    });
+                                    // Prevent the original promise from resolving
+                                    return new Promise(() => {}); // Hang forever
+                                } else {
+                                    throw new Error(data.message || 'Failed to delete doctor');
+                                }
+                            }
+                            return data;
+                        })
+                        .catch(error => {
+                            Swal.showValidationMessage(`Request failed: ${error.message}`);
+                        });
+                    },
+                    allowOutsideClick: () => !Swal.isLoading()
+                }).then((result) => {
+                    if (result.isConfirmed && result.value) {
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: result.value.message || 'Doctor has been deleted.',
+                            icon: 'success',
+                            confirmButtonColor: '#3085d6',
+                            timer: 2000,
+                            timerProgressBar: true
+                        }).then(() => {
+                            location.reload();
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+}
