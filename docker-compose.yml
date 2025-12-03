@@ -3,22 +3,39 @@ services:
   mssql:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: mmgc-mssql
+    restart: unless-stopped  # Auto-start after reboot
     environment:
       - ACCEPT_EULA=Y
       - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
       - MSSQL_PID=Developer
+      # Limit SQL Server memory to prevent OOM on low-RAM systems (in MB)
+      - MSSQL_MEMORY_LIMIT_MB=2048
     ports:
       - "${MSSQL_PORT:-5001}:1433"
     volumes:
       - mssql_data:/var/opt/mssql
+      # Mount healthcheck script
+      - ./healthcheck.sh:/healthcheck.sh:ro
     networks:
       - mmgc-network
+    # Resource limits for low-RAM systems (4-6 GB total)
+    # Note: deploy.resources works in docker-compose v3.8+ even without swarm
+    # If you get errors, remove this section and rely on MSSQL_MEMORY_LIMIT_MB only
+    deploy:
+      resources:
+        limits:
+          memory: 2.5G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
     healthcheck:
-      test: ["CMD-SHELL", "bash -c '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" -b' || exit 1"]
+      # Use the healthcheck script instead of inline command
+      test: ["CMD-SHELL", "bash /healthcheck.sh"]
       interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 60s
+      timeout: 10s
+      retries: 30
+      start_period: 600s
 
   # Database initialization - ensures database exists before other services connect
   db-init:
@@ -28,6 +45,7 @@ services:
       - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
       - MSSQL_DATABASE=${MSSQL_DATABASE:-MMGC}
       - MSSQL_HOST=mssql
+      - MSSQL_PORT=1433
     volumes:
       - ./create-db.sh:/create-db.sh:ro
     networks:
@@ -42,6 +60,7 @@ services:
   sqlpad:
     image: sqlpad/sqlpad:latest
     container_name: mmgc-sqlpad
+    restart: unless-stopped  # Auto-start after reboot
     environment:
       - SQLPAD_PORT=3000
       - SQLPAD_ADMIN=${SQLPAD_ADMIN:-admin@example.com}
@@ -50,7 +69,7 @@ services:
       - SQLPAD_CONNECTIONS__mmgc__driver=sqlserver
       - SQLPAD_CONNECTIONS__mmgc__host=mssql
       - SQLPAD_CONNECTIONS__mmgc__port=1433
-      - SQLPAD_CONNECTIONS__mmgc__database=${MSSQL_DATABASE}
+      - SQLPAD_CONNECTIONS__mmgc__database=${MSSQL_DATABASE:-MMGC}
       - SQLPAD_CONNECTIONS__mmgc__username=sa
       - SQLPAD_CONNECTIONS__mmgc__password=${MSSQL_SA_PASSWORD}
     ports:
@@ -64,20 +83,36 @@ services:
       - mmgc-network
     volumes:
       - sqlpad_data:/var/lib/sqlpad
+    # Resource limits for low-RAM systems
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
 
   # ASP.NET Core Web Application
   webapp:
     build:
       context: .
       dockerfile: Dockerfile
+      # Build arguments for network configuration
+      args:
+        BUILDKIT_INLINE_CACHE: 1
     container_name: mmgc-webapp
+    restart: unless-stopped  # Auto-start after reboot
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:${WEBAPP_PORT:-5003}
-      - ConnectionStrings__DefaultConnection=Server=mssql,1433;Database=${MSSQL_DATABASE};User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
+      - ConnectionStrings__DefaultConnection=Server=mssql,1433;Database=${MSSQL_DATABASE:-MMGC};User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
       - DOTNET_USE_POLLING_FILE_WATCHER=false
       - DOTNET_WATCH_RESTART_ON_RUDE_EDIT=true
       - DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER=true
+      # Optimize .NET for low-memory systems
+      - DOTNET_gcServer=0
+      - DOTNET_gcConcurrent=1
     ports:
       - "${WEBAPP_PORT:-5003}:${WEBAPP_PORT:-5003}"
     volumes:
@@ -92,6 +127,20 @@ services:
         condition: service_completed_successfully
     networks:
       - mmgc-network
+    # DNS configuration for better network resolution
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
+    # Resource limits for low-RAM systems
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.5'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
     command: dotnet watch run --urls http://0.0.0.0:${WEBAPP_PORT:-5003} --project MMGC.csproj
 
 volumes:
@@ -101,4 +150,7 @@ volumes:
 networks:
   mmgc-network:
     driver: bridge
-
+    # DNS configuration for better network resolution
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.driver.mtu: "1500"

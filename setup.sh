@@ -101,7 +101,7 @@ echo -e "${GREEN}All ports are available${NC}"
 
 # Check for existing containers and remove them
 echo -e "${BLUE}Checking for existing containers...${NC}"
-CONTAINERS=("mmgc-db-init" "mmgc-mssql" "mmgc-sqlpad" "mmgc-webapp")
+CONTAINERS=("mmgc-mssql" "mmgc-sqlpad" "mmgc-webapp" "mmgc-db-init")
 for container in "${CONTAINERS[@]}"; do
     if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
         echo -e "${YELLOW}Found existing container: $container${NC}"
@@ -118,6 +118,10 @@ done
 echo -e "${BLUE}Cleaning up docker-compose resources...${NC}"
 $DOCKER_COMPOSE_CMD down -v 2>/dev/null || true
 
+# Make scripts executable
+echo -e "${BLUE}Making scripts executable...${NC}"
+chmod +x healthcheck.sh create-db.sh migrate.sh 2>/dev/null || true
+
 # Build Docker images
 echo -e "${GREEN}Building Docker images...${NC}"
 if ! $DOCKER_COMPOSE_CMD build --no-cache; then
@@ -132,35 +136,77 @@ if ! $DOCKER_COMPOSE_CMD up -d; then
     exit 1
 fi
 
-# Wait for MSSQL to be ready
-echo -e "${YELLOW}Waiting for MSSQL Server to be ready...${NC}"
-MAX_ATTEMPTS=60
+# Wait for MSSQL to become healthy (using Docker healthcheck)
+echo -e "${YELLOW}Waiting for MSSQL Server to become healthy...${NC}"
+echo -e "${BLUE}Note: This may take 10-15 minutes on first startup (SQL Server initialization)${NC}"
+MAX_ATTEMPTS=90  # Increased for slow systems (90 * 10s = 15 minutes)
 ATTEMPT=0
-MSSQL_READY=false
+MSSQL_HEALTHY=false
 
 while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-    if docker exec mmgc-mssql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" -b &> /dev/null 2>&1; then
-        echo -e "${GREEN}MSSQL Server is ready!${NC}"
-        MSSQL_READY=true
+    # Check health status using Docker inspect
+    HEALTH_STATUS=$(docker inspect --format='{{.State.Health.Status}}' mmgc-mssql 2>/dev/null || echo "unknown")
+    
+    if [ "$HEALTH_STATUS" = "healthy" ]; then
+        echo -e "${GREEN}MSSQL Server is healthy!${NC}"
+        MSSQL_HEALTHY=true
         break
+    elif [ "$HEALTH_STATUS" = "starting" ]; then
+        # Healthcheck is running but not healthy yet
+        if [ $((ATTEMPT % 6)) -eq 0 ]; then
+            echo -e "${YELLOW}MSSQL Server healthcheck is starting... (Attempt $((ATTEMPT + 1))/$MAX_ATTEMPTS)${NC}"
+        fi
+    elif [ "$HEALTH_STATUS" = "unhealthy" ]; then
+        echo -e "${RED}Error: MSSQL Server healthcheck is unhealthy!${NC}"
+        echo -e "${YELLOW}Check logs: $DOCKER_COMPOSE_CMD logs mssql${NC}"
+        exit 1
+    else
+        # Container exists but healthcheck not started yet
+        if [ $((ATTEMPT % 6)) -eq 0 ]; then
+            echo -e "${YELLOW}Waiting for MSSQL Server to start healthcheck... (Attempt $((ATTEMPT + 1))/$MAX_ATTEMPTS)${NC}"
+        fi
     fi
+    
+    ATTEMPT=$((ATTEMPT + 1))
+    sleep 10  # Check every 10 seconds (healthcheck interval)
+done
+
+if [ "$MSSQL_HEALTHY" = false ]; then
+    echo -e "${RED}Error: MSSQL Server did not become healthy in time.${NC}"
+    echo -e "${YELLOW}Check logs with: $DOCKER_COMPOSE_CMD logs mssql${NC}"
+    echo -e "${YELLOW}Check health status: docker inspect --format='{{.State.Health.Status}}' mmgc-mssql${NC}"
+    exit 1
+fi
+
+# Wait for db-init to complete (database creation is handled by db-init container)
+echo -e "${YELLOW}Waiting for database initialization to complete...${NC}"
+MAX_ATTEMPTS=30
+ATTEMPT=0
+DB_INIT_COMPLETE=false
+
+while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+    # Check if db-init container exists and has exited with success
+    if docker ps -a --format '{{.Names}} {{.Status}}' | grep -q "^mmgc-db-init Exited (0)"; then
+        echo -e "${GREEN}Database initialization completed!${NC}"
+        DB_INIT_COMPLETE=true
+        break
+    elif docker ps -a --format '{{.Names}} {{.Status}}' | grep -q "^mmgc-db-init Exited"; then
+        # db-init exited with error
+        echo -e "${RED}Error: Database initialization failed!${NC}"
+        echo -e "${YELLOW}Check logs: docker logs mmgc-db-init${NC}"
+        exit 1
+    fi
+    
     ATTEMPT=$((ATTEMPT + 1))
     if [ $((ATTEMPT % 5)) -eq 0 ]; then
-        echo -e "${YELLOW}Waiting for MSSQL Server... (Attempt $ATTEMPT/$MAX_ATTEMPTS)${NC}"
+        echo -e "${YELLOW}Waiting for database initialization... (Attempt $ATTEMPT/$MAX_ATTEMPTS)${NC}"
     fi
     sleep 2
 done
 
-if [ "$MSSQL_READY" = false ]; then
-    echo -e "${RED}Error: MSSQL Server did not become ready in time.${NC}"
-    echo -e "${YELLOW}Check logs with: $DOCKER_COMPOSE_CMD logs mssql${NC}"
-    exit 1
-fi
-
-# Create database if it doesn't exist
-echo -e "${GREEN}Creating database if it doesn't exist...${NC}"
-if ! docker exec mmgc-mssql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -C -Q "IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = '${MSSQL_DATABASE}') CREATE DATABASE [${MSSQL_DATABASE}]" -b 2>&1; then
-    echo -e "${YELLOW}Warning: Could not create database (it may already exist)${NC}"
+if [ "$DB_INIT_COMPLETE" = false ]; then
+    echo -e "${YELLOW}Warning: Database initialization may still be in progress${NC}"
+    echo -e "${YELLOW}Check status: docker ps -a | grep mmgc-db-init${NC}"
 fi
 
 # Wait for webapp container to be ready
@@ -217,10 +263,13 @@ sleep 3
 
 # Verify migrations were applied by checking if Identity tables exist
 echo -e "${GREEN}Verifying database schema...${NC}"
-if docker exec mmgc-mssql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -d "$MSSQL_DATABASE" -C -Q "IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'AspNetRoles') SELECT 1 ELSE SELECT 0" -b | grep -q "1"; then
+# Wait a bit for database to be fully ready
+sleep 2
+if docker exec mmgc-mssql /opt/mssql-tools18/bin/sqlcmd -S localhost,1433 -U sa -P "$MSSQL_SA_PASSWORD" -d "$MSSQL_DATABASE" -C -Q "IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'AspNetRoles') SELECT 1 ELSE SELECT 0" -b -h -1 -W 2>/dev/null | grep -q "1"; then
     echo -e "${GREEN}Database schema verified!${NC}"
 else
     echo -e "${RED}Error: Database schema not found. Migrations may have failed.${NC}"
+    echo -e "${YELLOW}Check migration logs above for details${NC}"
     exit 1
 fi
 
@@ -238,8 +287,8 @@ sleep 10
 
 # Verify seeding was successful
 echo -e "${GREEN}Verifying database seeding...${NC}"
-ROLE_COUNT=$(docker exec mmgc-mssql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -d "$MSSQL_DATABASE" -C -Q "SELECT COUNT(*) FROM AspNetRoles" -h -1 -W 2>/dev/null | tr -d '[:space:]' || echo "0")
-USER_COUNT=$(docker exec mmgc-mssql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -d "$MSSQL_DATABASE" -C -Q "SELECT COUNT(*) FROM AspNetUsers" -h -1 -W 2>/dev/null | tr -d '[:space:]' || echo "0")
+ROLE_COUNT=$(docker exec mmgc-mssql /opt/mssql-tools18/bin/sqlcmd -S localhost,1433 -U sa -P "$MSSQL_SA_PASSWORD" -d "$MSSQL_DATABASE" -C -Q "SELECT COUNT(*) FROM AspNetRoles" -h -1 -W 2>/dev/null | tr -d '[:space:]' || echo "0")
+USER_COUNT=$(docker exec mmgc-mssql /opt/mssql-tools18/bin/sqlcmd -S localhost,1433 -U sa -P "$MSSQL_SA_PASSWORD" -d "$MSSQL_DATABASE" -C -Q "SELECT COUNT(*) FROM AspNetUsers" -h -1 -W 2>/dev/null | tr -d '[:space:]' || echo "0")
 
 if [ "$ROLE_COUNT" -ge "5" ] && [ "$USER_COUNT" -ge "1" ]; then
     echo -e "${GREEN}Database seeding verified! Found $ROLE_COUNT roles and $USER_COUNT users.${NC}"
