@@ -101,7 +101,7 @@ echo -e "${GREEN}All ports are available${NC}"
 
 # Check for existing containers and remove them
 echo -e "${BLUE}Checking for existing containers...${NC}"
-CONTAINERS=("mmgc-mssql" "mmgc-sqlpad" "mmgc-webapp")
+CONTAINERS=("mmgc-db-init" "mmgc-mssql" "mmgc-sqlpad" "mmgc-webapp")
 for container in "${CONTAINERS[@]}"; do
     if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
         echo -e "${YELLOW}Found existing container: $container${NC}"
